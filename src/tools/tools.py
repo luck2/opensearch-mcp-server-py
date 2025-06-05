@@ -52,14 +52,19 @@ async def search_index_tool(args: SearchIndexArgs) -> list[dict]:
     try:
         result = search_index(args.index, args.query)
 
-        # embeddingフィールドを除外
+        # embedding フィールドと metadata 内の _node_content を除外
         for item in result.get("hits", {}).get("hits", []):
-            if (
-                isinstance(item, dict)
-                and "_source" in item
-                and "embedding" in item["_source"]
-            ):
-                del item["_source"]["embedding"]
+            if isinstance(item, dict) and "_source" in item:
+                # embedding フィールドを削除
+                if "embedding" in item["_source"]:
+                    del item["_source"]["embedding"]
+
+                # metadata 内の _node_content を削除
+                if "metadata" in item["_source"] and isinstance(
+                    item["_source"]["metadata"], dict
+                ):
+                    if "_node_content" in item["_source"]["metadata"]:
+                        del item["_source"]["metadata"]["_node_content"]
 
         formatted_result = json.dumps(result, indent=2)
 
